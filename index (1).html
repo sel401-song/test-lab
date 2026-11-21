@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>방산 협력사 입고·품질 운영 대시보드</title>
+<style>
+:root{--ink:#142338;--muted:#506176;--line:#dce4ed;--navy:#142941;--blue:#24708f;--blue-bg:#e8f2f7;--orange:#c8611a;--orange-ink:#8d410f;--orange-bg:#fff1e4;--red:#b3283b;--red-ink:#952233;--red-bg:#fcebee;--green:#256656;--green-bg:#eaf5f1;--head:#f4f7fa}
+*{box-sizing:border-box}
+body{margin:0;color:var(--ink);background:#fff;font:14px/1.56 "Pretendard","Noto Sans CJK KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;font-variant-numeric:tabular-nums}
+a{color:inherit}button,select,input{font:inherit}
+button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:3px solid #1387b4;outline-offset:3px}
+header{background:var(--navy);color:#fff;border-top:4px solid #46a8c3}
+.top,.wrap{max-width:1480px;margin:auto;padding:0 32px}
+.top{display:flex;min-height:60px;align-items:center;gap:27px}
+.brand{font-weight:740;white-space:nowrap;font-size:15px}
+.brand::before{content:"";display:inline-block;width:10px;height:10px;margin-right:10px;background:#70c7dd;border-radius:2px}
+.top nav{display:flex;gap:22px;color:#d1ddea;font-size:13px}.top nav a{text-decoration:none}.top nav a:hover{text-decoration:underline}
+.top .docno{margin-left:auto;color:#aebfd2;font-size:12px;white-space:nowrap}
+.wrap{padding-bottom:32px}
+.mast{display:flex;justify-content:space-between;gap:28px;align-items:end;padding:27px 0 18px}
+.mast h1{font-size:clamp(24px,3.1vw,35px);margin:0;font-weight:780;letter-spacing:-.05em;line-height:1.25}
+.mast p{margin:7px 0 0;color:var(--muted)}
+.cutoff{margin:0;min-width:200px}.cutoff div{display:flex;justify-content:space-between;gap:20px}.cutoff dt{color:var(--muted)}.cutoff dd{margin:0;font-weight:650}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.stat,.chart,.panel,.detail{border:1px solid var(--line);background:#fff;border-radius:7px}
+.stat{padding:12px 15px;border-top:3px solid var(--blue);min-width:0}
+.stat.k-late{border-top-color:var(--orange)}.stat.k-issue{border-top-color:var(--red)}.stat.k-open{border-top-color:#61749c}
+.stat h2{font-size:13px;margin:0;color:var(--muted);font-weight:650}
+.metric{font-size:27px;font-weight:780;letter-spacing:-.045em;display:block;line-height:1.4}
+.k-issue .metric{color:var(--red-ink)}
+.stat small{color:var(--muted);font-size:11.5px}.stat small b{font-weight:700}
+.t-late,.section-title .t-late{color:var(--orange-ink)}.t-issue,.section-title .t-issue{color:var(--red-ink)}
+.callout{margin:14px 0 21px;padding:12px 15px;background:#fff;border:1px solid var(--line);border-left:4px solid var(--red);border-radius:4px;display:flex;gap:12px;align-items:baseline}
+.callout b{white-space:nowrap;color:var(--red-ink)}.callout p{margin:0}
+.section-title{display:flex;justify-content:space-between;gap:14px;align-items:baseline;margin:0 0 9px}
+.section-title h2{font-size:18px;margin:0;letter-spacing:-.03em}.section-title span{color:var(--muted);font-size:12px}
+.charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.chart{padding:13px 15px;min-width:0}.chart h3{font-size:14px;margin:0 0 2px}.chart>p{color:var(--muted);font-size:12px;margin:2px 0 0}
+.canvas{margin-top:8px}.canvas svg{display:block;width:100%;height:auto;max-height:220px;overflow:visible}
+.canvas text{font-family:inherit;fill:#42556a;font-size:11px}.canvas .v{fill:var(--ink);font-weight:700}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin:6px 0 0;padding:0;list-style:none;font-size:11.5px;color:var(--muted)}
+.legend i{display:inline-block;width:11px;height:9px;border-radius:2px;margin-right:5px;vertical-align:0}
+.legend i.ln{height:3px;vertical-align:3px}
+.chart p.numerical{color:var(--ink);margin-top:8px;font-weight:610;font-size:12px}
+#orders,#criteria{margin-top:22px;scroll-margin-top:12px}
+.workbench{display:grid;grid-template-columns:minmax(0,2.3fr) minmax(300px,1fr);gap:12px;align-items:start}
+.panel,.detail{min-width:0}
+.filters{display:flex;flex-wrap:wrap;align-items:end;gap:9px 12px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.filters label{display:grid;gap:3px;font-size:11px;font-weight:650;color:var(--muted)}
+.filters select,.filters input,.filters button{height:32px;padding:0 8px;border:1px solid #bfcddb;border-radius:4px;color:var(--ink);background:#fff;max-width:100%}
+.filters input{width:132px}.filters button{cursor:pointer}
+.result{margin-left:auto;color:var(--muted);font-size:12px;align-self:center}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:12px}
+th,td{padding:8px 9px;text-align:left;border-bottom:1px solid #e6edf3}
+thead th{background:var(--head);color:#3e5367;font-size:11px}
+tr[data-current="true"]{background:#eaf3f9}tbody tr:last-child>*{border-bottom:0}
+.order-button{border:0;background:transparent;color:#085b81;font-weight:750;padding:1px 3px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.pill{display:inline-block;border-radius:4px;padding:1px 6px;color:var(--muted);background:#edf1f4}
+.pill.late{color:var(--orange-ink);background:var(--orange-bg);font-weight:650}
+.pill.issue{color:var(--red-ink);background:var(--red-bg);font-weight:650}
+.pill.open{color:#2f4766;background:#e6ecf5}.pill.closed{color:var(--green);background:var(--green-bg)}
+.pill.miss{color:var(--red-ink);background:var(--red-bg)}.pill.ok{color:var(--green);background:var(--green-bg)}
+.detail{padding:14px}.detail h3{margin:0 0 4px;font-size:17px}
+.detail .detail-meta{margin:0 0 6px;color:var(--muted);font-size:12px}
+.detail dl{margin:0}.detail dt{font-size:11px;color:var(--muted);font-weight:760;margin-top:11px}.detail dd{margin:2px 0 0;font-size:12.5px}
+.detail ul{margin:3px 0 0;padding:0;list-style:none}.detail li{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px dashed #e3e9ef;font-size:12px}.detail li:last-child{border-bottom:0}
+.detail .detail-proof{margin-top:12px;padding-top:8px;border-top:1px solid var(--line);color:var(--muted);font-size:11px}
+.criteria{padding:13px 15px}.criteria dl{display:grid;grid-template-columns:max-content 1fr;gap:7px 16px;margin:0;font-size:12px}.criteria dt{font-weight:740}.criteria dd{margin:0;color:var(--muted)}
+footer{color:var(--muted);font-size:11px;margin-top:16px}
+@media(max-width:960px){.top,.wrap{padding-left:18px;padding-right:18px}.workbench{grid-template-columns:1fr}.mast{align-items:flex-start}}
+@media(max-width:630px){.top{min-height:52px;gap:12px}.top nav,.top .docno{display:none}.mast{flex-direction:column;gap:12px}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.charts{grid-template-columns:1fr}.callout{display:block}.callout p{margin-top:3px}.section-title{flex-direction:column;gap:2px}.criteria dl{grid-template-columns:1fr;gap:2px}.criteria dd{margin-bottom:6px}}
+@media print{header nav,.filters{display:none}.wrap{padding:0}.chart,.panel,.detail{break-inside:avoid}}
+</style>
+</head>
+<body>
+<header><div class="top"><div class="brand">구매·품질 운영</div><nav aria-label="섹션"><a href="#overview">운영 현황</a><a href="#orders">입고·조치 내역</a><a href="#criteria">집계 기준</a></nav><span class="docno">구매품질-2026-1121-01</span></div></header>
+<main class="wrap">
+<section id="overview" aria-labelledby="heading">
+<div class="mast"><div><h1 id="heading">방산 협력사 입고·품질 운영 대시보드</h1><p>입고 실적, 입고검사 이상, 진행 안건의 후속조치·종결 조건</p></div>
+<dl class="cutoff"><div><dt>기준일</dt><dd>2026.11.19</dd></div><div><dt>입고 집계 기간</dt><dd id="period"></dd></div><div><dt>대상</dt><dd id="scope"></dd></div></dl></div>
+<div class="kpis" id="kpis" aria-label="전체 기준 핵심 지표"></div>
+<div class="callout"><b>우선 검토</b><p id="priority"></p></div>
+<div class="section-title"><h2>운영 지표</h2><span>전체 입고 주문 기준 · <span class="t-late">■ 납기 지연</span> · <span class="t-issue">■ 검사 이상</span></span></div>
+<div class="charts">
+<article class="chart"><h3>협력사별 납기 준수와 지연</h3><p>협력사별 전체 주문을 준수와 지연으로 구분합니다.</p><div class="canvas" id="supplier-chart"></div><ul class="legend"><li><i style="background:var(--blue)"></i>준수</li><li><i style="background:var(--orange)"></i>지연</li></ul><p class="numerical" id="supplier-note"></p></article>
+<article class="chart"><h3>입고검사 결과 구성</h3><p>정상과 이상 유형을 주문 단위로 집계합니다.</p><div class="canvas" id="quality-chart"></div><ul class="legend" id="quality-legend"></ul><p class="numerical" id="quality-note"></p></article>
+<article class="chart"><h3>주문별 지연 일수</h3><p>실제 입고일 − 약정 납기일. 0일은 납기 준수입니다.</p><div class="canvas" id="delay-chart"></div><ul class="legend"><li><i style="background:var(--orange)"></i>지연 주문</li><li><i style="background:#c9d5e0"></i>준수(0일)</li></ul><p class="numerical" id="delay-note"></p></article>
+<article class="chart"><h3>입고일별 주문과 검사 이상</h3><p>실제 입고일 기준으로 전체 주문과 검사 이상 건수를 비교합니다.</p><div class="canvas" id="receipt-chart"></div><ul class="legend"><li><i style="background:var(--blue)"></i>입고 주문</li><li><i class="ln" style="background:var(--red)"></i>검사 이상</li></ul><p class="numerical" id="receipt-note"></p></article>
+</div>
+</section>
+<section id="orders" aria-labelledby="orders-heading"><div class="section-title"><h2 id="orders-heading">입고·검사 이력과 조치 상세</h2><span>주문번호를 선택하면 증빙 상태와 후속조치·종결 조건을 볼 수 있습니다.</span></div>
+<div class="workbench"><div class="panel">
+<div class="filters" aria-label="주문표 필터">
+<label>주문번호<input type="search" id="search" placeholder="예: R02" autocomplete="off"></label>
+<label>협력사<select id="supplier"><option value="">전체</option></select></label>
+<label>처리 상태<select id="state"><option value="">전체</option><option>진행</option><option>완료</option></select></label>
+<label>예외 유형<select id="exception"><option value="">전체</option><option value="any">지연 또는 검사 이상</option><option value="late">납기 지연</option><option value="issue">검사 이상</option><option value="both">지연 및 검사 이상</option><option value="none">예외 없음</option></select></label>
+<button id="reset" type="button">초기화</button><span id="count" class="result" aria-live="polite"></span></div>
+<div class="table-wrap" tabindex="0" aria-label="주문 이력표"><table>
+<thead><tr><th scope="col">주문번호</th><th scope="col">협력사</th><th scope="col">약정 납기</th><th scope="col">실제 입고</th><th scope="col">지연</th><th scope="col">검사 결과</th><th scope="col">처리 상태</th></tr></thead>
+<tbody id="rows"></tbody></table></div></div>
+<aside class="detail" id="detail" aria-label="선택 주문 상세" aria-live="polite"></aside></div></section>
+<section id="criteria" aria-labelledby="criteria-heading"><div class="section-title"><h2 id="criteria-heading">집계 기준과 자료 범위</h2></div>
+<div class="panel criteria"><dl>
+<dt>납기</dt><dd>실제 입고일이 약정 납기일보다 늦으면 지연입니다. 지연 일수 = 실제 입고일 − 약정 납기일, 지연 평균의 분모는 지연 주문 수입니다.</dd>
+<dt>검사</dt><dd>검사 이상률은 검사 결과가 ‘정상’이 아닌 주문 수를 전체 입고 주문 수로 나눠 산출합니다.</dd>
+<dt>중복</dt><dd>지연과 검사 이상이 같은 주문에서 발생할 수 있습니다(R02). 예외 주문 수는 주문번호 기준으로 중복을 제거합니다.</dd>
+<dt>처리 상태</dt><dd>주문 현황 원본의 ‘진행’, ‘완료’를 그대로 표시합니다. 확인 부서·요청 조치·종결 조건은 보고서(구매품질-2026-1121-01) Ⅴ장의 결재 요청안이며, 증빙 검토 후에만 ‘완료’로 변경합니다.</dd>
+<dt>미확인 항목</dt><dd>기록에 없는 원인·수량(R02 원인·불량 수량, R03·R07 원인·영향 수량, R06 지연 사유)은 자료 확보 전까지 미확인으로 표시합니다.</dd>
+<dt>필터 범위</dt><dd>필터는 주문표와 상세에만 적용됩니다. 상단 지표와 그래프의 기준은 전체 주문입니다.</dd>
+</dl></div>
+</section>
+<footer>근거 자료　주문·수치: 협력사 주문 현황(01_supplier_orders.csv) · 후속조치: 보고서 구매품질-2026-1121-01, 입고검사 기록 IQC-R02, 시정조치 요청서 CAR-R02(안)</footer>
+</main>
+<script type="text/csv" id="source-data">order_id,supplier,due_date,received_date,quality,status
+R01,A,2026-11-14,2026-11-14,정상,완료
+R02,A,2026-11-15,2026-11-17,외관 불량,진행
+R03,B,2026-11-16,2026-11-16,규격 불일치,진행
+R04,C,2026-11-16,2026-11-18,정상,완료
+R05,B,2026-11-17,2026-11-17,정상,완료
+R06,D,2026-11-17,2026-11-19,정상,진행
+R07,C,2026-11-18,2026-11-18,포장 손상,진행
+R08,D,2026-11-19,2026-11-19,정상,완료
+</script>
+<script>
+'use strict';
+const $ = (id) => document.getElementById(id);
+const C = {blue:'#24708f', orange:'#c8611a', red:'#b3283b', grid:'#e5edf3', axis:'#c3cfdb', zero:'#c9d5e0', ok:'#9fb6c8'};
+const redShades = ['#b3283b','#d9576a','#ee9aa5'];
+
+/* ---------- 데이터: CSV ---------- */
+const [headerLine, ...lines] = $('source-data').textContent.trim().split(/\r?\n/);
+const cols = headerLine.split(',');
+const day = 86400000;
+const orders = lines.map(line => {
+  const r = Object.fromEntries(line.split(',').map((v, i) => [cols[i], v.trim()]));
+  return {
+    id: r.order_id, supplier: r.supplier, due: r.due_date, received: r.received_date,
+    quality: r.quality, status: r.status,
+    daysLate: Math.max(0, Math.round((Date.parse(r.received_date) - Date.parse(r.due_date)) / day)),
+    issue: r.quality !== '정상',
+  };
+});
+const lookup = Object.fromEntries(orders.map(o => [o.id, o]));
+const suppliers = [...new Set(orders.map(o => o.supplier))].sort();
+const receivedDates = orders.map(o => o.received).sort();
+const start = Date.parse(receivedDates[0]), end = Date.parse(receivedDates.at(-1));
+const dates = Array.from({length: Math.round((end - start) / day) + 1}, (_, i) => new Date(start + i * day).toISOString().slice(0, 10));
+const late = orders.filter(o => o.daysLate > 0);
+const issues = orders.filter(o => o.issue);
+const open = orders.filter(o => o.status === '진행');
+const exceptions = orders.filter(o => o.daysLate > 0 || o.issue);
+const overlap = late.filter(o => o.issue);
+const lead = overlap[0] ?? exceptions[0];
+const meanDelay = late.length ? late.reduce((s, o) => s + o.daysLate, 0) / late.length : 0;
+const pct = n => (100 * n / orders.length).toFixed(1) + '%';
+const mmdd = d => d.slice(5).replace('-', '.');
+const fmt = d => d.replaceAll('-', '.');
+const ids = list => list.map(o => o.id).join('·') || '없음';
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const bySupplier = suppliers.map(s => orders.filter(o => o.supplier === s));
+const qualityLabels = ['정상', ...new Set(issues.map(o => o.quality))];
+const qualityCounts = qualityLabels.map(q => orders.filter(o => o.quality === q).length);
+const byDate = dates.map(d => orders.filter(o => o.received === d));
+
+/* ---------- 후속조치: 보고서 구매품질-2026-1121-01 Ⅳ·Ⅴ장, CAR-R02 ---------- */
+const followup = {
+  R02: {
+    dept: '품질·구매',
+    evidence: [['기본 정보 4항목(협력사·입고일·검사 결과·처리 상태)', '주문 현황과 IQC-R02 일치', 'ok'],
+               ['검사 사진', '첨부 없음', 'miss'], ['검사성적서', '첨부 없음', 'miss'],
+               ['불량 범위·수량', '미확인(기록 없음)', 'miss'], ['발생 원인', '미확인(확인 전)', 'miss']],
+    evidenceNote: '약정 납기 2026.11.15는 주문 현황에만 있고 IQC-R02에는 항목이 없습니다.',
+    action: '시정조치 요청서 CAR-R02 발행(결재 후). 검사 사진·성적서 확보, 불량 범위·수량 확인. 협력사 A에 원인·시정조치·재발방지 회신 요청, 납기 지연(2일) 경위는 구매 부서에 별도 회신 요청.',
+    close: '증빙 2종(검사 사진·성적서) 확보, 불량 범위·수량 확정, 협력사 회신 4개 항목 검토 및 납기 영향 검토 결과 기록.',
+    proof: '담당자·협력사 회신 기한: 미정(결재 시 지정). CAR-R02 상태: 발행 검토.',
+  },
+  R03: {dept: '구매·품질', evidence: [['원인·영향 수량', '미확인', 'miss']],
+    action: '발주 규격과 실물·검사 기록 대조, 차이 항목과 영향 범위 확인.', close: '차이 항목 특정, 처분 또는 재검 결과 기록.'},
+  R06: {dept: '구매', evidence: [['지연 사유', '미확인', 'miss']],
+    action: '협력사 D에 지연 경위 확인, 후속 조달 일정 영향 검토.', close: '지연 사유와 일정 영향 검토 결과를 주문 기록에 반영.'},
+  R07: {dept: '품질·물류', evidence: [['손상 범위·수량', '미확인', 'miss']],
+    action: '포장 손상 범위와 내용물 영향 확인.', close: '포장·내용물 확인 결과와 처분 판단 기록.'},
+};
+
+/* ---------- 상단 ---------- */
+const text = (id, v) => { $(id).textContent = v; };
+text('period', fmt(dates[0]) + '–' + mmdd(dates.at(-1)));
+text('scope', '주문 ' + orders.length + '건 · 협력사 ' + suppliers.length + '곳');
+$('priority').innerHTML = (lead ? '<b class="t-issue" style="color:inherit">' + lead.id + '</b> 주문(협력사 ' + lead.supplier + ')은 <span class="t-late">' + lead.daysLate + '일 지연</span>과 <span class="t-issue">입고검사 ‘' + esc(lead.quality) + '’</span>가 겹친 유일한 건으로, 시정조치 요청서 CAR-R02 발행 승인이 요청되어 있습니다. ' : '') +
+  '예외 주문은 중복 제거 ' + exceptions.length + '건(' + ids(exceptions) + '), 처리 진행 ' + open.length + '건(' + ids(open) + ')입니다.';
+const kpis = [
+  ['', '전체 입고 주문', orders.length + '건', ids([orders[0], orders.at(-1)]).replace('·', '~') + ' · 협력사 ' + suppliers.length + '곳'],
+  ['k-late', '납기 준수율', pct(orders.length - late.length), '준수 ' + (orders.length - late.length) + '건 · <b class="t-late">납기 지연 ' + late.length + '건</b> (' + ids(late) + ', 평균 ' + meanDelay.toFixed(1) + '일)'],
+  ['k-issue', '입고검사 이상률', pct(issues.length), '<b class="t-issue">검사 이상 ' + issues.length + '건</b> / 전체 ' + orders.length + '건 (' + ids(issues) + ')'],
+  ['k-open', '처리 진행', open.length + '건', pct(open.length) + ' · 완료 ' + (orders.length - open.length) + '건 (진행 ' + ids(open) + ')'],
+];
+$('kpis').innerHTML = kpis.map(([cls, label, value, note]) => '<article class="stat ' + cls + '"><h2>' + label + '</h2><strong class="metric">' + value + '</strong><small>' + note + '</small></article>').join('');
+
+/* ---------- SVG 그래프 ---------- */
+const NS = 'http://www.w3.org/2000/svg';
+function svg(w, h, label) {
+  const el = document.createElementNS(NS, 'svg');
+  el.setAttribute('viewBox', '0 0 ' + w + ' ' + h); el.setAttribute('role', 'img'); el.setAttribute('aria-label', label);
+  return el;
+}
+function add(parent, tag, attrs, content) {
+  const el = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  if (content != null) el.textContent = content;
+  parent.appendChild(el); return el;
+}
+function tip(el, s) { add(el, 'title', {}, s); return el; }
+function axes(g, {x0, x1, y0, y1, max, unit}) {
+  for (let v = 0; v <= max; v++) {
+    const y = y0 - (y0 - y1) * v / max;
+    add(g, 'line', {x1: x0, x2: x1, y1: y, y2: y, stroke: v ? C.grid : C.axis});
+    add(g, 'text', {x: x0 - 6, y: y + 4, 'text-anchor': 'end'}, v);
+  }
+  add(g, 'text', {x: x0 - 6, y: y1 - 10, 'text-anchor': 'end'}, unit);
+}
+const W = 520, H = 210, P = {l: 40, r: 12, t: 22, b: 30};
+const plot = {x0: P.l, x1: W - P.r, y0: H - P.b, y1: P.t};
+const yOf = (v, max) => plot.y0 - (plot.y0 - plot.y1) * v / max;
+
+// 1) 협력사별 납기
+(function () {
+  const s = svg(W, H, '협력사별 납기 준수·지연 누적 막대'); const max = 2;
+  axes(s, {...plot, max, unit: '건'});
+  const band = (plot.x1 - plot.x0) / suppliers.length, bw = Math.min(56, band * .5);
+  suppliers.forEach((sup, i) => {
+    const g = bySupplier[i], ok = g.filter(o => !o.daysLate).length, lt = g.length - ok;
+    const x = plot.x0 + band * i + (band - bw) / 2;
+    if (ok) tip(add(s, 'rect', {x, y: yOf(ok, max), width: bw, height: plot.y0 - yOf(ok, max), fill: C.blue}), '협력사 ' + sup + ' 준수 ' + ok + '건');
+    if (lt) tip(add(s, 'rect', {x, y: yOf(ok + lt, max), width: bw, height: yOf(ok, max) - yOf(ok + lt, max), fill: C.orange}), '협력사 ' + sup + ' 지연 ' + lt + '건 (' + ids(g.filter(o => o.daysLate)) + ')');
+    add(s, 'text', {x: x + bw / 2, y: plot.y0 + 18, 'text-anchor': 'middle'}, '협력사 ' + sup);
+    if (lt) add(s, 'text', {x: x + bw + 6, y: yOf(ok + lt / 2, max) + 4, class: 'v', style: 'fill:#8d410f'}, ids(g.filter(o => o.daysLate)));
+  });
+  $('supplier-chart').append(s);
+  text('supplier-note', suppliers.map((sup, i) => sup + ' ' + bySupplier[i].filter(o => !o.daysLate).length + '/' + bySupplier[i].length + '건 준수').join(' · ') + ' / 납기 지연 ' + late.length + '건');
+})();
+
+// 2) 검사 결과 도넛
+(function () {
+  const s = svg(W, H, '입고검사 결과 도넛 그래프');
+  const colors = qualityLabels.map((q, i) => i === 0 ? C.ok : redShades[(i - 1) % redShades.length]);
+  const cx = 150, cy = H / 2, R = 88, r = 56; let a = -Math.PI / 2;
+  qualityCounts.forEach((n, i) => {
+    if (!n) return;
+    const b = a + 2 * Math.PI * n / orders.length, large = b - a > Math.PI ? 1 : 0;
+    const p = (rad, ang) => (cx + rad * Math.cos(ang)).toFixed(2) + ' ' + (cy + rad * Math.sin(ang)).toFixed(2);
+    tip(add(s, 'path', {d: 'M' + p(R, a) + ' A' + R + ' ' + R + ' 0 ' + large + ' 1 ' + p(R, b) + ' L' + p(r, b) + ' A' + r + ' ' + r + ' 0 ' + large + ' 0 ' + p(r, a) + 'Z', fill: colors[i], stroke: '#fff', 'stroke-width': 2}),
+      qualityLabels[i] + ' ' + n + '건 (' + pct(n) + ')');
+    a = b;
+  });
+  add(s, 'text', {x: cx, y: cy - 4, 'text-anchor': 'middle', class: 'v', style: 'font-size:22px;fill:#952233'}, pct(issues.length));
+  add(s, 'text', {x: cx, y: cy + 16, 'text-anchor': 'middle'}, '검사 이상 ' + issues.length + '건');
+  qualityLabels.forEach((q, i) => {
+    const y = 48 + i * 30;
+    add(s, 'rect', {x: 290, y: y - 10, width: 12, height: 12, rx: 2, fill: colors[i]});
+    add(s, 'text', {x: 310, y, class: 'v', style: i ? 'fill:#952233' : ''}, q + '  ' + qualityCounts[i] + '건');
+    if (i) add(s, 'text', {x: 420, y}, ids(orders.filter(o => o.quality === q)));
+  });
+  $('quality-chart').append(s);
+  $('quality-legend').innerHTML = '<li><i style="background:' + C.ok + '"></i>정상</li><li><i style="background:' + C.red + '"></i>검사 이상(유형별 적색 계열)</li>';
+  text('quality-note', qualityLabels.map((q, i) => q + ' ' + qualityCounts[i] + '건').join(' · ') + ' / 검사 이상 ' + issues.length + '건(' + pct(issues.length) + ')');
+})();
+
+// 3) 주문별 지연 일수
+(function () {
+  const s = svg(W, H, '주문별 지연 일수 막대그래프'); const max = Math.max(3, ...orders.map(o => o.daysLate));
+  axes(s, {...plot, max, unit: '일'});
+  const band = (plot.x1 - plot.x0) / orders.length, bw = Math.min(34, band * .56);
+  orders.forEach((o, i) => {
+    const x = plot.x0 + band * i + (band - bw) / 2;
+    if (o.daysLate) tip(add(s, 'rect', {x, y: yOf(o.daysLate, max), width: bw, height: plot.y0 - yOf(o.daysLate, max), fill: C.orange, rx: 2}), o.id + ' ' + o.daysLate + '일 지연 (약정 ' + mmdd(o.due) + ' → 입고 ' + mmdd(o.received) + ')');
+    else tip(add(s, 'rect', {x, y: plot.y0 - 2, width: bw, height: 2, fill: C.zero}), o.id + ' 납기 준수');
+    add(s, 'text', {x: x + bw / 2, y: (o.daysLate ? yOf(o.daysLate, max) : plot.y0) - 6, 'text-anchor': 'middle', class: o.daysLate ? 'v' : '', style: o.daysLate ? 'fill:#8d410f' : ''}, o.daysLate + '일');
+    add(s, 'text', {x: x + bw / 2, y: plot.y0 + 18, 'text-anchor': 'middle', style: o.daysLate ? 'font-weight:700;fill:#8d410f' : ''}, o.id);
+  });
+  $('delay-chart').append(s);
+  text('delay-note', '납기 지연 ' + late.length + '건: ' + late.map(o => o.id + ' ' + o.daysLate + '일').join(' · ') + ' / 지연 주문 평균 ' + meanDelay.toFixed(1) + '일');
+})();
+
+// 4) 입고일별 주문과 검사 이상
+(function () {
+  const s = svg(W, H, '입고일별 주문과 검사 이상 혼합 그래프'); const max = Math.max(3, ...byDate.map(g => g.length));
+  axes(s, {...plot, max, unit: '건'});
+  const band = (plot.x1 - plot.x0) / dates.length, bw = Math.min(40, band * .5);
+  const pts = [];
+  dates.forEach((d, i) => {
+    const g = byDate[i], n = g.length, k = g.filter(o => o.issue).length, x = plot.x0 + band * i + (band - bw) / 2, cx = x + bw / 2;
+    if (n) tip(add(s, 'rect', {x, y: yOf(n, max), width: bw, height: plot.y0 - yOf(n, max), fill: C.blue, rx: 2}), mmdd(d) + ' 입고 ' + n + '건 (' + ids(g) + ')');
+    add(s, 'text', {x: cx, y: plot.y0 + 18, 'text-anchor': 'middle'}, mmdd(d));
+    pts.push([cx, yOf(k, max), k, d, g.filter(o => o.issue)]);
+  });
+  add(s, 'polyline', {points: pts.map(p => p[0] + ',' + p[1]).join(' '), fill: 'none', stroke: C.red, 'stroke-width': 2});
+  for (const [x, y, k, d, list] of pts) {
+    tip(add(s, 'circle', {cx: x, cy: y, r: k ? 5 : 3.5, fill: k ? C.red : '#fff', stroke: C.red, 'stroke-width': 2}), mmdd(d) + ' 검사 이상 ' + k + '건' + (k ? ' (' + ids(list) + ')' : ''));
+    if (k) add(s, 'text', {x, y: y - 12, 'text-anchor': 'middle', class: 'v', style: 'fill:#952233'}, ids(list));
+  }
+  $('receipt-chart').append(s);
+  const peak = Math.max(...byDate.map(g => g.length));
+  text('receipt-note', '입고 ' + orders.length + '건 / 검사 이상 ' + issues.length + '건(' + issues.map(o => mmdd(o.received) + ' ' + o.id).join(' · ') + ') / ' + dates.filter((_, i) => byDate[i].length === peak).map(mmdd).join('·') + ' 날짜별 최다 ' + peak + '건');
+})();
+
+/* ---------- 주문표·필터·상세 ---------- */
+for (const s of suppliers) $('supplier').add(new Option('협력사 ' + s, s));
+function getVisibleOrders() {
+  const state = $('state').value, supplier = $('supplier').value, kind = $('exception').value;
+  const query = $('search').value.trim().toUpperCase();
+  return orders.filter(o => {
+    const lt = o.daysLate > 0;
+    const kindOk = !kind || (kind === 'any' && (lt || o.issue)) || (kind === 'late' && lt) || (kind === 'issue' && o.issue) ||
+      (kind === 'both' && lt && o.issue) || (kind === 'none' && !lt && !o.issue);
+    return kindOk && (!state || o.status === state) && (!supplier || o.supplier === supplier) && o.id.toUpperCase().includes(query);
+  });
+}
+let current = lead?.id ?? orders[0]?.id ?? '';
+function renderDetail(o) {
+  if (!o) { $('detail').innerHTML = '<h3>주문 상세</h3><p class="detail-meta">조건에 맞는 주문이 없습니다.</p>'; return; }
+  const f = followup[o.id];
+  const due = '약정 ' + fmt(o.due) + ' → 입고 ' + fmt(o.received) + ' · ' + (o.daysLate ? '<span class="pill late">' + o.daysLate + '일 지연</span>' : '<span class="pill">납기 준수</span>');
+  const qc = '<span class="pill ' + (o.issue ? 'issue' : '') + '">' + esc(o.quality) + '</span>' + (o.id === 'R02' ? ' · 입고검사 기록 IQC-R02' : '');
+  let evidence;
+  if (f) evidence = '<ul>' + f.evidence.map(([k, v, c]) => '<li><span>' + k + '</span><span class="pill ' + c + '">' + v + '</span></li>').join('') + '</ul>' + (f.evidenceNote ? '<p class="detail-meta" style="margin:4px 0 0">' + f.evidenceNote + '</p>' : '');
+  else evidence = '주문 현황 기록 · 처리 ' + o.status + (o.status === '완료' ? ' (보고서 진행 안건 아님)' : '');
+  const pairs = [['납기', due], ['검사 결과', qc], ['증빙 상태', evidence]];
+  if (f) pairs.push(['확인 부서', f.dept], ['후속조치(요청 조치)', f.action], ['종결 조건', f.close]);
+  else pairs.push(['후속조치', '별도 요청 조치 없음']);
+  $('detail').innerHTML = '<h3>' + o.id + ' 주문 상세</h3><p class="detail-meta">협력사 ' + o.supplier + ' · 처리 <span class="pill ' + (o.status === '진행' ? 'open' : 'closed') + '">' + o.status + '</span></p><dl>' +
+    pairs.map(([k, v]) => '<dt>' + k + '</dt><dd>' + v + '</dd>').join('') + '</dl>' +
+    (f ? '<p class="detail-proof">' + (f.proof ? f.proof + ' ' : '') + '종결 원칙: 증빙을 검토한 뒤에만 처리 상태를 ‘완료’로 변경합니다. (보고서 Ⅴ장 결재 요청안)</p>' : '');
+}
+function renderRows() {
+  const shown = getVisibleOrders();
+  if (!shown.some(o => o.id === current)) current = shown[0]?.id || '';
+  text('count', shown.length + ' / ' + orders.length + '건');
+  $('rows').innerHTML = shown.map(o => {
+    const sel = o.id === current;
+    return '<tr data-current="' + sel + '" data-id="' + o.id + '"><th scope="row"><button type="button" class="order-button" data-order="' + o.id + '" aria-pressed="' + sel + '">' + o.id + '</button></th>' +
+      '<td>' + o.supplier + '</td><td>' + fmt(o.due) + '</td><td>' + fmt(o.received) + '</td><td><span class="pill ' + (o.daysLate ? 'late' : '') + '">' + o.daysLate + '일</span></td>' +
+      '<td><span class="pill ' + (o.issue ? 'issue' : '') + '">' + esc(o.quality) + '</span></td><td><span class="pill ' + (o.status === '진행' ? 'open' : 'closed') + '">' + o.status + '</span></td></tr>';
+  }).join('') || '<tr><td colspan="7">조건에 맞는 주문이 없습니다.</td></tr>';
+  renderDetail(lookup[current]);
+}
+for (const id of ['state', 'supplier', 'exception']) $(id).addEventListener('change', renderRows);
+$('search').addEventListener('input', renderRows);
+$('reset').addEventListener('click', () => {
+  for (const id of ['state', 'supplier', 'exception', 'search']) $(id).value = '';
+  current = lead?.id ?? orders[0]?.id ?? '';
+  renderRows();
+});
+$('rows').addEventListener('click', e => {
+  const b = e.target.closest('button[data-order]'); if (!b) return;
+  current = b.dataset.order;
+  for (const x of $('rows').querySelectorAll('button[data-order]')) {
+    const sel = x === b; x.setAttribute('aria-pressed', String(sel)); x.closest('tr').dataset.current = String(sel);
+  }
+  renderDetail(lookup[current]);
+});
+renderRows();
+</script>
+</body>
+</html>
